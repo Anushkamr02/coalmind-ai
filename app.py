@@ -117,10 +117,14 @@ if tab == tab_names[0]:
     with st.container(border=True):
         st.subheader("▶ Run Validation Engine")
         if st.button("🛡 Validate all facts"):
-            with st.spinner("Running statistical + geological validation rules…"):
+            with st.status("Running statistical & geological validation...", expanded=True) as status:
+                st.write("Executing validation rules across fact store...")
                 logs = []
                 summ = validate.run_all(log=lambda m: logs.append(m))
-            st.code("\n".join(logs))
+                st.write("Compiling validation flags and anomalies...")
+                status.update(label="Validation complete!", state="complete", expanded=False)
+            with st.expander("Validation Log", expanded=False):
+                st.code("\n".join(logs))
             geo = summ.get("flags_by_code", {})
             geo_count = sum(v for k, v in geo.items()
                             if k in {"BOREHOLE_DEPTH_SUM","CORE_RECOVERY_OVER","DEPTH_ORDER",
@@ -184,8 +188,11 @@ elif tab == tab_names[1]:
 
     if submit_query and q_input.strip():
         with st.container(border=True):
-            with st.spinner("Processing…"):
+            with st.status("Executing hybrid search...", expanded=True) as status:
+                st.write("Determining routing (Text-to-SQL vs. Text chunks)...")
                 res = query.answer(q_input.strip())
+                st.write(f"Routing resolved: `{res['route']}`")
+                status.update(label="Query execution finished", state="complete", expanded=False)
             st.markdown(f"**Route:** `{res['route']}`")
             if res.get("sql"):
                 with st.expander("SQL (click-to-source / read-only)", expanded=True):
@@ -224,8 +231,12 @@ elif tab == tab_names[2]:
         submit_pq = st.button("🚀 Generate Draft Reply", type="primary")
 
     if submit_pq and pq_q.strip():
-        with st.spinner("Parsing question, fetching facts, drafting reply…"):
+        with st.status("Drafting Parliamentary Question Reply...", expanded=True) as status:
+            st.write("Parsing parliamentary intent & entities...")
+            st.write("Fetching verified metrics from fact store...")
             result = pq_copilot.draft(pq_q.strip())
+            st.write("Generating formal administrative draft...")
+            status.update(label="Draft reply prepared for review", state="complete", expanded=False)
         st.session_state["_pq_result"] = result
 
     if "_pq_result" in st.session_state:
@@ -305,8 +316,15 @@ elif tab == tab_names[3]:
         else:
             with st.container(border=True):
                 try:
-                    with st.spinner("Understanding your report requirement..."):
+                    with st.status("Generating focused executive report...", expanded=True) as status:
+                        st.write("Analyzing request and defining report scope...")
                         plan = report_gen.build_report_plan(report_request.strip())
+                        
+                        st.write("Extracting evidence and compiling tables...")
+                        out = Path(OUT / "CoalMind_Focused_Report.docx")
+                        path = report_gen.generate_report(out_path=out, report_request=report_request.strip(), plan=plan)
+                        
+                        status.update(label="Report successfully compiled!", state="complete", expanded=False)
 
                     with st.expander("🔎 Report scope understood by CoalMind", expanded=True):
                         st.markdown(f"**Title:** {plan.get('title', 'CoalMind Focused Report')}")
@@ -319,10 +337,6 @@ elif tab == tab_names[3]:
                             st.markdown("**Periods:** " + ", ".join(plan["periods"]))
                         if plan.get("exclude"):
                             st.markdown("**Excluded:** " + ", ".join(plan["exclude"]))
-
-                    with st.spinner("Retrieving relevant evidence and generating focused report..."):
-                        out = Path(OUT / "CoalMind_Focused_Report.docx")
-                        path = report_gen.generate_report(out_path=out, report_request=report_request.strip(), plan=plan)
 
                     st.success("✅ Focused report generated successfully.")
                     with open(path, "rb") as f:
@@ -397,13 +411,20 @@ elif tab == tab_names[5]:
     with st.container(border=True):
         if st.button("🧪 Run KPI Evaluation on synthetic data", type="primary"):
             logs = []
-            with st.spinner("Building synthetic workbook, ingesting, extracting, validating, measuring…"):
+            with st.status("Executing gold-set evaluation benchmark...", expanded=True) as status:
+                st.write("Initializing isolated benchmark database...")
                 old_db = str(db.get_path())
                 db.set_path(db.get_path().parent / "_eval_tmp.db")
                 db.reset()
+                
+                st.write("Ingesting, extracting, and running validation suite...")
                 kpis = evaluate.run(log=lambda m: logs.append(m))
+                
+                st.write("Restoring database context...")
                 db.reset()
                 db.set_path(Path(old_db))
+                
+                status.update(label="Evaluation benchmark completed!", state="complete", expanded=False)
             with st.expander("Evaluation log"):
                 st.code("\n".join(logs))
             st.session_state["_kpis"] = kpis
