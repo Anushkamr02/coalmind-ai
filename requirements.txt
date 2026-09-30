@@ -11,6 +11,7 @@ matplotlib>=3.8
 wordcloud>=1.9         # word cloud visualisation
 # For PDF text extraction (install at least one)
 pymupdf>=1.24          # pip install pymupdf
+python-dotenv>=1.2.3         # for .env file support
 # pytesseract            # OCR for scanned PDFs (also needs tesseract binary)
 # For BERTopic topics (Tier 1; falls back to TF-IDF + NMF automatically)
 # bertopic>=0.16
