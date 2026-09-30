@@ -23,10 +23,35 @@ st.sidebar.title("⛏️ CoalMind")
 st.sidebar.caption("Verified AI · Smart India Hackathon")
 st.sidebar.divider()
 
-tab_names = ["📥 Ingest & Validate", "🔍 Query", "📜 PQ Copilot",
-             "📊 Reports", "☁️ Topics", "📈 KPI Dashboard",
-             "🌐 Graph Explorer", "🏛️ Architecture"]
-tab = st.sidebar.radio("Navigation", tab_names)
+from streamlit_option_menu import option_menu
+
+tab_names = [
+    "Ingest & Validate", "Query", "PQ Copilot", 
+    "Reports", "Topics", "KPI Dashboard", 
+    "Graph Explorer", "Architecture"
+]
+
+with st.sidebar:
+    tab = option_menu(
+        menu_title="Navigation",
+        options=tab_names,
+        icons=[
+            'cloud-upload', 'search', 'file-earmark-text', 
+            'file-earmark-bar-graph', 'chat-left-text', 
+            'speedometer2', 'diagram-3', 'building'
+        ],
+        menu_icon="compass",
+        default_index=0,
+        styles={
+            "container": {"padding": "0!important", "background-color": "transparent"},
+            "icon": {"color": "#1F497D", "font-size": "16px"}, 
+            "nav-link": {
+                "font-size": "14px", "text-align": "left", 
+                "margin":"0px", "--hover-color": "#EBF3FB"
+            },
+            "nav-link-selected": {"background-color": "#1F497D", "color": "white"},
+        }
+    )
 
 st.sidebar.divider()
 with st.sidebar.expander("🤖 LLM Settings"):
@@ -49,6 +74,10 @@ def _status_badge(s):
 def _sev_badge(s):
     c = {"error":"#c00","warn":"#e65c00","info":"#1565c0"}.get(s,"#555")
     return f"<span style='background:{c};color:white;padding:1px 6px;border-radius:4px;font-size:11px'>{s}</span>"
+
+def _conf_badge(s):
+    colors = {"high":"#2e7d32", "medium":"#f57c00", "low":"#c62828"}
+    return f"<span style='background:{colors.get(s.lower(),'#888')};color:white;padding:2px 8px;border-radius:12px;font-size:12px;font-weight:600;'>{s.upper()}</span>"
 
 # ══════════════════════════════════════════════════════════════════════════════
 # TAB 1: INGEST & VALIDATE
@@ -111,7 +140,17 @@ if tab == tab_names[0]:
             
             con.close()
             if not docs.empty:
-                st.dataframe(docs[["filename","doc_type","kind","uploaded_at"]], use_container_width=True, hide_index=True)
+                st.dataframe(
+                    docs[["filename","doc_type","kind","uploaded_at"]], 
+                    width="stretch", 
+                    hide_index=True,
+                    column_config={
+                        "filename": st.column_config.TextColumn("File Name", width="medium"),
+                        "doc_type": st.column_config.TextColumn("Type", width="small"),
+                        "kind": st.column_config.TextColumn("Category", width="small"),
+                        "uploaded_at": st.column_config.DatetimeColumn("Uploaded At", format="DD MMM YYYY, h:mm a")
+                    }
+                )
 
     # Card 4: Validation Engine
     with st.container(border=True):
@@ -154,7 +193,20 @@ if tab == tab_names[0]:
                 mask = fdf.apply(lambda r: search.lower() in str(r.get("entity","")).lower()
                                             or search.lower() in str(r.get("table_title","")).lower(), axis=1)
                 fdf = fdf[mask]
-            st.dataframe(fdf, use_container_width=True, height=350, hide_index=True)
+            st.dataframe(
+                fdf, 
+                width="stretch", 
+                height=350, 
+                hide_index=True,
+                column_config={
+                    "fact_id": st.column_config.TextColumn("Fact ID", width="small"),
+                    "status": st.column_config.TextColumn("Status", width="small"),
+                    "flag_count": st.column_config.NumberColumn("Flags", format="%d 🚩", width="small"),
+                    "value": st.column_config.NumberColumn("Value"),
+                    "entity": st.column_config.TextColumn("Entity", width="medium"),
+                    "filename": st.column_config.TextColumn("Source File", width="medium")
+                }
+            )
 
             if not flags_df.empty:
                 st.subheader("🚩 Validation flags")
@@ -204,7 +256,7 @@ elif tab == tab_names[1]:
             if res.get("rows") is not None:
                 import pandas as pd
                 df = pd.DataFrame(res["rows"], columns=res["cols"])
-                st.dataframe(df, use_container_width=True, hide_index=True)
+                st.dataframe(df, width="stretch", hide_index=True)
             if res.get("narrative"):
                 st.markdown("### 💬 Answer")
                 st.markdown(res["narrative"])
@@ -242,8 +294,7 @@ elif tab == tab_names[2]:
     if "_pq_result" in st.session_state:
         with st.container(border=True):
             result = st.session_state["_pq_result"]
-            conf_colors = {"high":"🟢","medium":"🟡","low":"🔴"}
-            st.markdown(f"**Confidence:** {conf_colors.get(result['confidence'],'⚪')} {result['confidence']}")
+            st.markdown(f"**Confidence:** {_conf_badge(result['confidence'])}", unsafe_allow_html=True)
             if result.get("parsed"):
                 with st.expander("Parsed intent"):
                     st.json(result["parsed"])
@@ -254,7 +305,7 @@ elif tab == tab_names[2]:
             if result.get("rows"):
                 import pandas as pd
                 with st.expander(f"Data fetched ({len(result['rows'])} rows)"):
-                    st.dataframe(pd.DataFrame(result["rows"]), use_container_width=True)
+                    st.dataframe(pd.DataFrame(result["rows"]), width="stretch")
 
             st.subheader("📄 Draft Reply")
             edited = st.text_area("Edit before approving:", value=result.get("draft",""), height=300)
@@ -279,7 +330,7 @@ elif tab == tab_names[2]:
         )
         con.close()
         if not pqs.empty:
-            st.dataframe(pqs, use_container_width=True, hide_index=True)
+            st.dataframe(pqs, width="stretch", hide_index=True)
 
 # ══════════════════════════════════════════════════════════════════════════════
 # TAB 4: REPORTS
@@ -450,11 +501,16 @@ elif tab == tab_names[5]:
                 ["Validation catch rate", f"{kpis['validation_catch_rate_pct']}%", "100%"],
                 ["LLM provider", kpis["llm_status"], "—"],
             ]
-            st.table(
-                pd.DataFrame(
-                    rows,
-                    columns=["KPI", "Measured", "Target"]
-                ).astype(str)
+            kpi_df = pd.DataFrame(rows, columns=["KPI", "Measured", "Target"]).astype(str)
+            st.dataframe(
+                kpi_df,
+                width="stretch",
+                hide_index=True,
+                column_config={
+                    "KPI": st.column_config.TextColumn("Metric Name", width="medium"),
+                    "Measured": st.column_config.TextColumn("Measured Value", width="small"),
+                    "Target": st.column_config.TextColumn("Target Threshold", width="small")
+                }
             )
             if kpis.get("flags_by_code"):
                 st.subheader("Flags by rule")
@@ -503,7 +559,7 @@ elif tab == tab_names[6]:
             if summ["edge_types"]:
                 import pandas as pd
                 st.subheader("Edge types")
-                st.dataframe(pd.DataFrame(list(summ["edge_types"].items()), columns=["Relationship", "Count"]), hide_index=True, use_container_width=True)
+                st.dataframe(pd.DataFrame(list(summ["edge_types"].items()), columns=["Relationship", "Count"]), hide_index=True, width="stretch")
 
     with col2:
         with st.container(border=True):
@@ -528,7 +584,7 @@ elif tab == tab_names[6]:
             with st.expander("Full thesaurus dictionary"):
                 import pandas as pd
                 rows = [(canon, ", ".join(abbrs[:5])) for canon, abbrs in LITHO_DICT.items()]
-                st.dataframe(pd.DataFrame(rows, columns=["Canonical", "Variants (sample)"]), hide_index=True, use_container_width=True)
+                st.dataframe(pd.DataFrame(rows, columns=["Canonical", "Variants (sample)"]), hide_index=True, width="stretch")
 
         with st.container(border=True):
             st.subheader("🏔️ GCV Grade Classifier")
@@ -604,10 +660,27 @@ elif tab == tab_names[7]:
         with ref_c1:
             st.subheader("UNFC Confidence Classes")
             import pandas as pd
-            st.dataframe(pd.DataFrame(list(UNFC_SPACING.items()), columns=["Class", "Spacing Criterion"]), hide_index=True, use_container_width=True)
+            st.dataframe(
+                pd.DataFrame(list(UNFC_SPACING.items()), columns=["Class", "Spacing Criterion"]), 
+                hide_index=True, 
+                width="stretch",
+                column_config={
+                    "Class": st.column_config.TextColumn("UNFC Class", width="small"),
+                    "Spacing Criterion": st.column_config.TextColumn("Borehole Spacing Criterion")
+                }
+            )
 
         with ref_c2:
             st.subheader("Statutory Grade Bands")
             from coalmind.thesaurus import _GRADES
             grade_df = pd.DataFrame(_GRADES, columns=["Grade", "GCV Lo", "GCV Hi"])
-            st.dataframe(grade_df, hide_index=True, use_container_width=True)
+            st.dataframe(
+                grade_df, 
+                hide_index=True, 
+                width="stretch",
+                column_config={
+                    "Grade": st.column_config.TextColumn("Grade", width="small"),
+                    "GCV Lo": st.column_config.NumberColumn("GCV Low (kcal/kg)", width="small"),
+                    "GCV Hi": st.column_config.NumberColumn("GCV High (kcal/kg)", width="small")
+                }
+            )

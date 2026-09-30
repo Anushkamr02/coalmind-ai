@@ -32,7 +32,15 @@ def close(a, b, n=1):
 
 
 def _fy_key(p):
-    return int(p[:4]) if p and re.fullmatch(r"\d{4}-\d{2}", p) else None
+    if not isinstance(p, str):
+        return None
+
+    p = p.strip()
+
+    if re.fullmatch(r"\d{4}-\d{2}", p):
+        return int(p[:4])
+
+    return None
 
 
 def rule_sum(df):

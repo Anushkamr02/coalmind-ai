@@ -1,9 +1,19 @@
 [theme]
+# Primary accent color (matches your industrial blue)
 primaryColor = "#1F497D"
-backgroundColor = "#FFFFFF"
+
+# Main background color (very light gray/white)
+backgroundColor = "#F8F9FA"
+
+# Background color for cards, sidebars, and containers
 secondaryBackgroundColor = "#EBF3FB"
-textColor = "#1C1C1C"
+
+# Text color
+textColor = "#262730"
+
+# Font style
 font = "sans serif"
 
-[server]
-maxUploadSize = 200
+[client]
+# Disables the "Manage app" toolbar in the top right for a cleaner look
+toolbarMode = "minimal"
