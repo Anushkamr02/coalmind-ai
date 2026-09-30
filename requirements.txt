@@ -18,3 +18,4 @@ python-dotenv>=1.2.3         # for .env file support
 # sentence-transformers>=2.7
 # Legacy Excel
 # xlrd>=2.0            # only if you have .xls files (not .xlsx)
+streamlit-option-menu
