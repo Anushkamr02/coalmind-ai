@@ -1,0 +1,19 @@
+# CoalMind – Smart India Hackathon Prototype
+# Core (always required)
+pandas>=2.0
+openpyxl>=3.1
+python-docx>=1.1
+scikit-learn>=1.3
+requests>=2.31
+streamlit>=1.35
+matplotlib>=3.8
+# Optional but recommended
+wordcloud>=1.9         # word cloud visualisation
+# For PDF text extraction (install at least one)
+pymupdf>=1.24          # pip install pymupdf
+# pytesseract            # OCR for scanned PDFs (also needs tesseract binary)
+# For BERTopic topics (Tier 1; falls back to TF-IDF + NMF automatically)
+# bertopic>=0.16
+# sentence-transformers>=2.7
+# Legacy Excel
+# xlrd>=2.0            # only if you have .xls files (not .xlsx)
